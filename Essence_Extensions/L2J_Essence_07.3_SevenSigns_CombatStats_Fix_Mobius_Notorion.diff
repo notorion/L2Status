@@ -1,0 +1,206 @@
+# Authors: Mobius, Notorion
+# Applies to: L2J_Mobius_Essence_07.3_SevenSigns
+# Status: Nao testado em jogo (compilado com javac)
+diff --git a/java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java b/java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java
+index a4c41fa8ee6..178787cdf8f 100644
+--- a/java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java
++++ b/java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java
+@@ -58,6 +58,7 @@ import org.l2jmobius.gameserver.mechanics.stats.Stat;
+ import org.l2jmobius.gameserver.mechanics.stats.TraitType;
+ import org.l2jmobius.gameserver.network.serverpackets.ExUserInfoAddMDefend;
+ import org.l2jmobius.gameserver.network.serverpackets.ExUserInfoAddPDefend;
++import org.l2jmobius.gameserver.network.serverpackets.ExUserViewInfoParameter;
+ import org.l2jmobius.gameserver.util.MathUtil;
+ 
+ public class CreatureStat
+@@ -1157,6 +1158,8 @@ public class CreatureStat
+ 							{
+ 								_creature.sendPacket(new ExUserInfoAddMDefend(_creature.asPlayer()));
+ 							}
++							
++							_creature.sendPacket(new ExUserViewInfoParameter(_creature.asPlayer()));
+ 						}
+ 					}
+ 				}
+diff --git a/java/org/l2jmobius/gameserver/entity/itemcontainer/Inventory.java b/java/org/l2jmobius/gameserver/entity/itemcontainer/Inventory.java
+index f0a62f35e87..5b7391edcfe 100644
+--- a/java/org/l2jmobius/gameserver/entity/itemcontainer/Inventory.java
++++ b/java/org/l2jmobius/gameserver/entity/itemcontainer/Inventory.java
+@@ -342,9 +342,6 @@ public abstract class Inventory extends ItemContainer
+ 				item.getAugmentation().removeBonus(playable);
+ 			}
+ 			
+-			// Recalculate all stats
+-			playable.getStat().recalculateStats(true);
+-			
+ 			// Clear enchant bonus
+ 			item.clearEnchantStats();
+ 			
+@@ -544,6 +541,12 @@ public abstract class Inventory extends ItemContainer
+ 				}
+ 			}
+ 			
++			// Recalculate all stats
++			playable.getStat().recalculateStats(true);
++			
++			// Recalculate all stats
++			playable.getStat().recalculateStats(true);
++			
+ 			if (updateTimestamp && playable.isPlayer())
+ 			{
+ 				playable.sendPacket(new SkillCoolTime(playable.asPlayer()));
+@@ -573,9 +576,6 @@ public abstract class Inventory extends ItemContainer
+ 				item.getAugmentation().applyBonus(playable);
+ 			}
+ 			
+-			// Recalculate all stats
+-			playable.getStat().recalculateStats(true);
+-			
+ 			// Apply enchant stats
+ 			item.applyEnchantStats();
+ 			
+diff --git a/java/org/l2jmobius/gameserver/network/serverpackets/ExUserViewInfoParameter.java b/java/org/l2jmobius/gameserver/network/serverpackets/ExUserViewInfoParameter.java
+index 9cfe76909fd..643ab26918a 100644
+--- a/java/org/l2jmobius/gameserver/network/serverpackets/ExUserViewInfoParameter.java
++++ b/java/org/l2jmobius/gameserver/network/serverpackets/ExUserViewInfoParameter.java
+@@ -33,7 +33,7 @@ import org.l2jmobius.gameserver.network.GameClient;
+ import org.l2jmobius.gameserver.network.ServerPackets;
+ 
+ /**
+- * @author Mobius
++ * @author Mobius, Notorion
+  */
+ public class ExUserViewInfoParameter extends ServerPacket
+ {
+@@ -58,7 +58,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		// ################################## ATTACK ##############################
+ 		// P. Atk. (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.PHYSICAL_ATTACK, 0));
++		buffer.writeInt(calcPercentBonus(stat, Stat.PHYSICAL_ATTACK));
+ 		
+ 		// P. Atk. (num.)
+ 		buffer.writeShort(index++);
+@@ -66,7 +66,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// M. Atk. (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.MAGIC_ATTACK, 0));
++		buffer.writeInt(calcPercentBonus(stat, Stat.MAGIC_ATTACK));
+ 		
+ 		// M. Atk. (num)
+ 		buffer.writeShort(index++);
+@@ -138,7 +138,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// Basic Power
+ 		buffer.writeShort(index++);
+-		buffer.writeInt(0);
++		buffer.writeInt(calcPercentBonus(stat, Stat.AUTO_ATTACK_DAMAGE_BONUS));
+ 		
+ 		// P. Skill Power
+ 		buffer.writeShort(index++);
+@@ -215,7 +215,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		// ################################## DEFENCE ##############################
+ 		// P. Def. (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.PHYSICAL_DEFENCE) * 100);
++		buffer.writeInt(calcPercentBonus(stat, Stat.PHYSICAL_DEFENCE));
+ 		
+ 		// P. Def. (num.)
+ 		buffer.writeShort(index++);
+@@ -223,7 +223,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// M. Def. (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.MAGICAL_DEFENCE) * 100);
++		buffer.writeInt(calcPercentBonus(stat, Stat.MAGICAL_DEFENCE));
+ 		
+ 		// M. Def. (num.)
+ 		buffer.writeShort(index++);
+@@ -255,7 +255,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// PvP Damage Decrease
+ 		buffer.writeShort(index++);
+-		buffer.writeInt(0);
++		buffer.writeInt(calcInvertedPercentBonus(stat, Stat.PVP_PHYSICAL_ATTACK_DEFENCE));
+ 		
+ 		// Received basic PvE Damage
+ 		buffer.writeShort(index++);
+@@ -275,7 +275,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// PvE Damage Decrease
+ 		buffer.writeShort(index++);
+-		buffer.writeInt(0);
++		buffer.writeInt(calcInvertedPercentBonus(stat, Stat.PVE_PHYSICAL_ATTACK_DEFENCE));
+ 		
+ 		// Received basic damage power
+ 		buffer.writeShort(index++);
+@@ -355,7 +355,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// Shield Defense (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.SHIELD_DEFENCE) * 100);
++		buffer.writeInt(calcPercentBonus(stat, Stat.SHIELD_DEFENCE));
+ 		
+ 		// Shield Defence (num.)
+ 		buffer.writeShort(index++);
+@@ -396,7 +396,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		// ################################## ACCURACY ##############################
+ 		// P. Accuracy (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.ACCURACY_COMBAT) * 100);
++		buffer.writeInt(calcPercentBonus(stat, Stat.ACCURACY_COMBAT));
+ 		
+ 		// P. Accuracy (num.)
+ 		buffer.writeShort(index++);
+@@ -404,7 +404,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// M. Accuracy (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.ACCURACY_MAGIC) * 100);
++		buffer.writeInt(calcPercentBonus(stat, Stat.ACCURACY_MAGIC));
+ 		
+ 		// M. Accuracy (num.)
+ 		buffer.writeShort(index++);
+@@ -593,7 +593,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// HP Recovery Rate (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.REGENERATE_HP_RATE) * 100);
++		buffer.writeInt(calcPercentBonus(stat, Stat.REGENERATE_HP_RATE));
+ 		
+ 		// HP Recovery Rate (num.)
+ 		buffer.writeShort(index++);
+@@ -633,7 +633,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// MP Recovery Rate (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.REGENERATE_MP_RATE) * 100);
++		buffer.writeInt(calcPercentBonus(stat, Stat.REGENERATE_MP_RATE));
+ 		
+ 		// MP Recovery Rate (num.)
+ 		buffer.writeShort(index++);
+@@ -673,7 +673,7 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		
+ 		// CP Recovery Rate (%)
+ 		buffer.writeShort(index++);
+-		buffer.writeInt((int) stat.getValue(Stat.REGENERATE_CP_RATE) * 100);
++		buffer.writeInt(calcPercentBonus(stat, Stat.REGENERATE_CP_RATE));
+ 		
+ 		// CP Recovery Rate (num.)
+ 		buffer.writeShort(index++);
+@@ -850,4 +850,14 @@ public class ExUserViewInfoParameter extends ServerPacket
+ 		buffer.writeShort(index++);
+ 		buffer.writeInt((int) stat.getDefenceTrait(TraitType.INFECTION) * 100);
+ 	}
++	
++	private int calcPercentBonus(PlayerStat stat, Stat statType)
++	{
++		return (int) Math.round((stat.getMul(statType) - 1.0) * 10000.0);
++	}
++	
++	private int calcInvertedPercentBonus(PlayerStat stat, Stat statType)
++	{
++		return (int) Math.round((1.0 - stat.getMul(statType)) * 10000.0);
++	}
+ }
