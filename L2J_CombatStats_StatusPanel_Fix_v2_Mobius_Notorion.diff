@@ -1,7 +1,5 @@
-# Authors: Mobius, Notorion
-# Applies to: L2J_Mobius_14.1_SamuraiCrow (Live)
-﻿diff --git java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java
-index 61e2dae78f3..25423d91718 100644
+diff --git java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java
+index 011163f..7616314 100644
 --- java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java
 +++ java/org/l2jmobius/gameserver/entity/actor/stat/CreatureStat.java
 @@ -58,6 +58,7 @@ import org.l2jmobius.gameserver.mechanics.stats.Stat;
@@ -22,7 +20,7 @@ index 61e2dae78f3..25423d91718 100644
  					}
  				}
 diff --git java/org/l2jmobius/gameserver/entity/itemcontainer/Inventory.java java/org/l2jmobius/gameserver/entity/itemcontainer/Inventory.java
-index 4da5910c9cf..35ab0c81a94 100644
+index 4da5910..35ab0c8 100644
 --- java/org/l2jmobius/gameserver/entity/itemcontainer/Inventory.java
 +++ java/org/l2jmobius/gameserver/entity/itemcontainer/Inventory.java
 @@ -332,9 +332,6 @@ public abstract class Inventory extends ItemContainer
@@ -66,10 +64,10 @@ index 4da5910c9cf..35ab0c81a94 100644
  			{
  				player.sendPacket(new SkillCoolTime(player));
 diff --git java/org/l2jmobius/gameserver/network/serverpackets/ExUserViewInfoParameter.java java/org/l2jmobius/gameserver/network/serverpackets/ExUserViewInfoParameter.java
-index 7a29be2432c..8b27df9263f 100644
+index 7a29be2..9ee51f7 100644
 --- java/org/l2jmobius/gameserver/network/serverpackets/ExUserViewInfoParameter.java
 +++ java/org/l2jmobius/gameserver/network/serverpackets/ExUserViewInfoParameter.java
-@@ -20,13 +20,23 @@
+@@ -20,23 +20,72 @@
   */
  package org.l2jmobius.gameserver.network.serverpackets;
  
@@ -93,7 +91,11 @@ index 7a29be2432c..8b27df9263f 100644
  import org.l2jmobius.gameserver.mechanics.stats.Stat;
  import org.l2jmobius.gameserver.mechanics.stats.TraitType;
  import org.l2jmobius.gameserver.network.GameClient;
-@@ -37,6 +47,45 @@ import org.l2jmobius.gameserver.network.ServerPackets;
+ import org.l2jmobius.gameserver.network.ServerPackets;
+ 
+ /**
+- * @author Mobius, Atronic
++ * @author Mobius, Atronic, Notorion
   */
  public class ExUserViewInfoParameter extends ServerPacket
  {
